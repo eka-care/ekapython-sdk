@@ -94,7 +94,7 @@ class EkaCareClient:
             
         if self.client_id:
             headers["client-id"] = self.client_id
-            
+        
         response = self.session.request(
             method=method,
             url=url,

@@ -3,8 +3,10 @@ import os
 import mimetypes
 import boto3
 from urllib.parse import urlencode
-from datetime import datetime, timezone
+import uuid
+from io import BytesIO
 import json
+
 
 class EkaUploadError(Exception):
     """Upload related errors for Eka File Uploader"""
@@ -18,7 +20,7 @@ class EkaFileUploader:
     def __init__(self, client):
         self.client = client
     
-    def get_upload_location(self, txn_id=None, action='transcribe', extra_data={}):
+    def get_upload_location(self, txn_id=None, action='ekascribe', extra_data={}):
         """
         Get S3 upload location
         
@@ -31,9 +33,9 @@ class EkaFileUploader:
         try:
             params = {}
             if txn_id:
-                params['txnId'] = txn_id
+                params['txn_id'] = txn_id
                 params['action'] =  action
-            
+        
             response = self.client.request(
                 method="POST",
                 endpoint=f"/v1/file-upload?{urlencode(params)}",
@@ -42,37 +44,71 @@ class EkaFileUploader:
             return response
         except Exception as e:
             raise EkaUploadError(f"Error getting upload location: {str(e)}")
+        
+    def push_ekascribe_json(self, audio_files, txn_id, extra_data={}, upload_info={}):
+        s3_post_data = upload_info['uploadData']
+        folder_path = upload_info['folderPath']
+        s3_post_data['fields']['key'] = folder_path + txn_id + '.json'
+        data = {
+            "client-id": self.client.client_id,
+            "transaction-id": txn_id,
+            "audio-file": []
+        }
+        for item in audio_files:
+            data['audio-file'].append(item.split('/')[-1])
+        data.update(extra_data)
+        json_bytes = BytesIO(json.dumps(data, indent=2).encode('utf-8'))
+        files = {'file': ('data.json', json_bytes.getvalue(), 'application/json')}
 
-    def upload(self, file_path, txn_id=None, action='default',extra_data={}):
+        response = requests.post(
+            s3_post_data['url'],
+            data=s3_post_data['fields'],
+            files=files
+        )
+        if response.status_code != 204:
+            raise EkaUploadError(f"Upload failed: {response.text}")
+        return {
+            'key': folder_path + txn_id + '.json',
+            'contentType': 'application/json',
+            'size': len(json_bytes.getvalue())
+        }
+
+    def upload(self, file_paths, txn_id=None, action='default',extra_data={}):
         """
         Upload a file to S3
         
         Args:
             file_path (str): Path to the file to upload
             txn_id (str, optional): Transaction ID for grouping uploads
-            action (str, optional): Action to perform on the file, one of ['transcribe', 'default']
+            action (str, optional): Action to perform on the file, one of ['ekascribe', 'default']
             extra_data (dict, optional): Extra data to send with the upload request
             
         Returns:
             dict: Upload result containing key, content type, and size
         """
         try:
-            upload_info = self.get_upload_location(txn_id, action=action, extra_data={})
-            
-            file_size = os.path.getsize(file_path)
-            if file_size > 100 * 1024 * 1024:  # 100MB threshold
-                return self._upload_large_file(
-                    upload_info['uploadData'],
-                    upload_info['folderPath'],
-                    file_path
-                )
-            else:
-                return self._upload_single_file(
-                    upload_info['uploadData'],
-                    upload_info['folderPath'],
-                    file_path
-                )
-                
+            return_list = []
+            if not txn_id:
+                txn_id = str(uuid.uuid4())
+            upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
+           
+            for file_path in file_paths: 
+                file_size = os.path.getsize(file_path)
+                if file_size > 100 * 1024 * 1024:  # 100MB threshold
+                    return_list.append(self._upload_large_file(
+                        upload_info['uploadData'],
+                        upload_info['folderPath'],
+                        file_path
+                    ))
+                else:
+                    return_list.append(self._upload_single_file(
+                        upload_info['uploadData'],
+                        upload_info['folderPath'],
+                        file_path
+                ))
+            if action == 'ekascribe':
+                self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info)
+            return return_list
         except Exception as e:
             raise EkaUploadError(f"Upload failed: {str(e)}")
 
