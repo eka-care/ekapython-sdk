@@ -6,7 +6,6 @@ client_id='<Your ID>'
 txn_id = 'test-transaction-id-9'
 extra_data = {'mode':'dictation'}
 action = 'ekascribe'
-json_filepath = f'/Users/Vikalp/Downloads/{txn_id}.json'
 audio_files = [
     '/Users/Vikalp/Downloads/recording_PT85312001.mp3'
 ]
