@@ -34,7 +34,7 @@ class Assessment:
         context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Starts the assessment for a patient on behalf of a practitioner.
+        Starts the assessment for a patient by the Practitioner.
 
         Args:
             workflow_id: The workflow ID for the assessment
@@ -127,6 +127,7 @@ def _format_input(user_input: str) -> List[Dict[str, Any]]:
     user_response = {"user_input": user_input}
 
     return user_response
+
 
 def response(question, answer):
     """
