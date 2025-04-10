@@ -226,6 +226,41 @@ client.abdm_profile.verify_kyc_otp(
 )
 ```
 
+### Assessments
+
+```python
+# Start an assessment
+import json
+context = json.loads(
+    "name": "Rakesh",
+    "city": "Pune"
+)
+first_question_form = client.assessment.start(
+    age=20, 
+    gender="M", 
+    workflow_id=4002,
+    practitioner_uuid="example_pract_uuid_123",
+    patient_uuid="example_patient_uuid_123",
+    unique_identifier="example_unique_id_123",
+    context=context
+)
+
+# Continue the assessment (answer first question and get next question)
+ids_list = ["abc", "def"]  # for multi-select type question
+first_response = response(  # format the user's choices
+    question=first_question 
+    answer=answer
+)
+# Get next question
+client.assessment.next(
+    qid=0, 
+    user_response=first_response
+)
+
+# Submit the assessment at the end
+client.assessment.submit()
+```
+
 ## Error Handling
 
 The SDK uses custom exceptions to handle errors:
