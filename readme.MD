@@ -149,6 +149,45 @@ is_valid = client.webhooks.verify_signature(
 )
 ```
 
+### Appointment Management
+
+```python
+# Get Appointment Details
+response = client.appointments.get_appointment_details("YOUR_APPOINTMENT_ID")
+
+```
+
+
+### Doctor & Clinic Management
+
+```python
+# Get Clinic Details
+response = client.clinic_doctor.get_clinic_details("YOUR_CLINIC_ID")
+
+
+# Get Doctor Details
+response = client.clinic_doctor.get_doctor_details("YOUR_DOCTOR_ID")
+
+```
+
+### Appointment Management
+
+```python
+# Get Appointment Details
+response = client.appointments.get_appointment_details("YOUR_APPOINTMENT_ID")
+
+```
+
+### Patient Details
+
+```python
+# Get Patient Details
+response = client.patient.get_patient("YOUR_PATIENT_ID")
+
+```
+
+
+
 ### ABDM Profile Management
 
 ```python
