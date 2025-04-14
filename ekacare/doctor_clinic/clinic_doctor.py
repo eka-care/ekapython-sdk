@@ -19,7 +19,7 @@ class ClinicAndDoctor:
 
         Example:
             >>> client = EkaCareClient(client_id="your_id", client_secret="your_secret", access_token="user_token")
-            >>> clinic = client.clinic_doctor.get_clinic_details("YOUR_APPOINTMENT_ID")
+            >>> clinic = client.clinic_doctor.get_clinic_details("YOUR_CLINIC_ID")
             >>> print(clinic)
         """
         return self.client.request(
@@ -40,7 +40,7 @@ class ClinicAndDoctor:
 
         Example:
             >>> client = EkaCareClient(client_id="your_id", client_secret="your_secret", access_token="user_token")
-            >>> clinic = client.clinic_doctor.get_doctor_details("YOUR_APPOINTMENT_ID")
+            >>> clinic = client.clinic_doctor.get_doctor_details("YOUR_DOCTOR_ID")
             >>> print(clinic)
         """
         return self.client.request(
