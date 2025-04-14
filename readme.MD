@@ -15,6 +15,9 @@ The SDK provides easy access to the following Eka Care APIs:
 - Authentication
 - Records Management (upload, list, update, delete)
 - ABDM Connect (profile, consents, care contexts)
+- Appointment Management
+- Doctor & Clinic Management
+- Patient Management
 - Webhooks (register, manage, verify)
 - Vitals (update patient vitals)
 - Medical Document Parsing
