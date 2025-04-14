@@ -1,6 +1,10 @@
 import requests
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Union
+
+from .appointments.appointments import Appointments
+from .doctor_clinic.clinic_doctor import ClinicAndDoctor
+from .patient.patient import Patient
 from .utils.exceptions import EkaCareAPIError, EkaCareAuthError
 from .auth.auth import Auth
 from .records.records import Records
@@ -24,6 +28,7 @@ class EkaCareClient:
         client_id: str,
         client_secret: str,
         base_url: str = "https://api.eka.care",
+        api_key: Optional[str] = None,
         access_token: Optional[str] = None
     ):
         self.client_id = client_id
@@ -31,6 +36,7 @@ class EkaCareClient:
         self.base_url = base_url
         self.session = requests.Session()
         self._access_token = access_token
+        self.api_key = api_key
         
         # Initialize API modules
         self.auth = Auth(self)
@@ -38,6 +44,9 @@ class EkaCareClient:
         self.files = EkaFileUploader(self)
         self.vitals = Vitals(self)
         self.abdm_profile = Profile(self)
+        self.appointments = Appointments(self)
+        self.patient  = Patient(self)
+        self.clinic_doctor = ClinicAndDoctor(self)
         
     @property
     def access_token(self) -> str:

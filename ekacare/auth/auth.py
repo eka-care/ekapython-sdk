@@ -19,13 +19,17 @@ class Auth:
             >>> token_response = client.auth.login()
             >>> print(token_response["access_token"])
         """
+        login_json = {
+                "client_id": self.client.client_id,
+                "client_secret": self.client.client_secret
+            }
+        if self.client.api_key is not None:
+            login_json["api_key"] = self.client.api_key
+
         response = self.client.request(
             method="POST",
             endpoint="/connect-auth/v1/account/login",
-            json={
-                "client_id": self.client.client_id,
-                "client_secret": self.client.client_secret
-            },
+            json=login_json,
             auth_required=False
         )
         return response
