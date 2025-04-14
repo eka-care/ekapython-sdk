@@ -1,3 +1,36 @@
+Metadata-Version: 2.4
+Name: ekacare
+Version: 0.0.3
+Summary: Python SDK for Eka Care APIs
+Home-page: https://developer.eka.care
+Author: Eka Care SDK Developer
+Author-email: developer@eka.care
+Keywords: healthcare,eka care,api,sdk,health records,abdm
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: requests==2.25.0
+Requires-Dist: pyjwt==2.0.0
+Requires-Dist: boto3==1.37.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
 # Eka Care SDK for Python
 
 A comprehensive Python SDK for interacting with the Eka Care APIs.
