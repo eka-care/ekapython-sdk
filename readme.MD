@@ -5,7 +5,7 @@ A comprehensive Python SDK for interacting with the Eka Care APIs.
 ## Installation
 
 ```bash
-pip install ekacare-sdk
+pip install ekacare
 ```
 
 ## Features

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ekacare
-Version: 0.0.1
+Version: 0.0.3
 Summary: Python SDK for Eka Care APIs
 Home-page: https://developer.eka.care
 Author: Eka Care SDK Developer
@@ -17,8 +17,9 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
-Requires-Dist: requests>=2.25.0
-Requires-Dist: pyjwt>=2.0.0
+Requires-Dist: requests==2.25.0
+Requires-Dist: pyjwt==2.0.0
+Requires-Dist: boto3==1.37.0
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier
@@ -37,7 +38,7 @@ A comprehensive Python SDK for interacting with the Eka Care APIs.
 ## Installation
 
 ```bash
-pip install ekacare-sdk
+pip install ekacare
 ```
 
 ## Features

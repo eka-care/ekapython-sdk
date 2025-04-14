@@ -7,11 +7,12 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="ekacare",
-    version="0.0.1",
-    packages=find_packages("/"),
+    version="0.0.3",
+    packages=find_packages(),
     install_requires=[
-        "requests>=2.25.0",
-        "pyjwt>=2.0.0",
+        "requests==2.25.0",
+        "pyjwt==2.0.0",
+        "boto3==1.37.0"
     ],
     author="Eka Care SDK Developer",
     author_email="developer@eka.care",
