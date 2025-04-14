@@ -1,9 +1,14 @@
-from setuptools import setup, find_packages
+from pathlib import Path
+
+from setuptools import find_packages, setup
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name="ekacare-sdk",
-    version="0.1.0",
-    packages=find_packages(),
+    name="ekacare",
+    version="0.0.1",
+    packages=find_packages("/"),
     install_requires=[
         "requests>=2.25.0",
         "pyjwt>=2.0.0",
@@ -11,7 +16,7 @@ setup(
     author="Eka Care SDK Developer",
     author_email="developer@eka.care",
     description="Python SDK for Eka Care APIs",
-    long_description=open("README.md").read(),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="healthcare, eka care, api, sdk, health records, abdm",
     url="https://developer.eka.care",
