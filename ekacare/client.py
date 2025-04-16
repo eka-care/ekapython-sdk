@@ -11,6 +11,7 @@ from .records.records import Records
 from .tools.files import EkaFileUploader
 from .vitals.vitals import Vitals
 from .abdm.profile import Profile
+from .webhooks.appointment import AppointmentWebhook
 
 
 class EkaCareClient:
@@ -47,6 +48,7 @@ class EkaCareClient:
         self.appointments = Appointments(self)
         self.patient  = Patient(self)
         self.clinic_doctor = ClinicAndDoctor(self)
+        self.appointment_webhook = AppointmentWebhook(self)
         
     @property
     def access_token(self) -> str:
