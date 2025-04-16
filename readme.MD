@@ -232,8 +232,10 @@ client.abdm_profile.verify_kyc_otp(
 # Start an assessment
 import json
 context = json.loads(
-    "name": "Rakesh",
-    "city": "Pune"
+    {
+        "name": "Rakesh",
+        "city": "Pune"
+    }
 )
 first_question_form = client.assessment.start(
     age=20, 

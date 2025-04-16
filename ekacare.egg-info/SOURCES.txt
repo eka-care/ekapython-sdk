@@ -11,6 +11,8 @@ ekacare/abdm/__init__.py
 ekacare/abdm/profile.py
 ekacare/appointments/__init__.py
 ekacare/appointments/appointments.py
+ekacare/assessment/__init__.py
+ekacare/assessment/assessment.py
 ekacare/auth/__init__.py
 ekacare/auth/auth.py
 ekacare/doctor_clinic/__init__.py
