@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="ekacare",
-    version="0.0.3",
+    version="0.0.5",
     packages=find_packages(),
     install_requires=[
         "requests==2.25.0",
@@ -19,7 +19,7 @@ setup(
     description="Python SDK for Eka Care APIs",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    keywords="healthcare, eka care, api, sdk, health records, abdm",
+    keywords="healthcare, eka care, api, sdk, health records, abdm, self assessments",
     url="https://developer.eka.care",
     classifiers=[
         "Development Status :: 3 - Alpha",

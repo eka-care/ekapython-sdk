@@ -24,6 +24,9 @@ __all__ = ["Auth"]
 from .tools.files import EkaFileUploader
 __all__ = ["EkaFileUploader"]
 
+# ekacare/records/__init__.py
+from .assessment.assessment import Assessment
+__all__ = ["Assessment"]
 
 # ekacare/records/__init__.py
 from .records.records import Records
