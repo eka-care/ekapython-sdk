@@ -24,6 +24,8 @@ ekacare/tools/files.py
 ekacare/utils/__init__.py
 ekacare/utils/constants-file.py
 ekacare/utils/exceptions.py
+ekacare/v2rx/__init__.py
+ekacare/v2rx/v2rx.py
 ekacare/vitals/__init__.py
 ekacare/vitals/vitals.py
 tests/__init__.py
