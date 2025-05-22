@@ -45,7 +45,7 @@ class EkaFileUploader:
         except Exception as e:
             raise EkaUploadError(f"Error getting upload location: {str(e)}")
         
-    def push_ekascribe_json(self, audio_files, txn_id, extra_data={}, upload_info={}):
+    def push_ekascribe_json(self, audio_files, txn_id, extra_data={}, upload_info={}, output_format = {}):
         s3_post_data = upload_info['uploadData']
         folder_path = upload_info['folderPath']
         s3_post_data['fields']['key'] = folder_path + txn_id + '.json'
@@ -56,6 +56,8 @@ class EkaFileUploader:
         }
         for item in audio_files:
             data['audio-file'].append(item.split('/')[-1])
+        data["additional_data"] = extra_data
+        data["output_format"] = output_format
         data.update(extra_data)
         json_bytes = BytesIO(json.dumps(data, indent=2).encode('utf-8'))
         files = {'file': ('data.json', json_bytes.getvalue(), 'application/json')}
@@ -73,7 +75,7 @@ class EkaFileUploader:
             'size': len(json_bytes.getvalue())
         }
 
-    def upload(self, file_paths, txn_id=None, action='default',extra_data={}):
+    def upload(self, file_paths, txn_id=None, action='default',extra_data={}, output_format = {}):
         """
         Upload a file to S3
         
@@ -107,7 +109,7 @@ class EkaFileUploader:
                         file_path
                 ))
             if action == 'ekascribe':
-                self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info)
+                self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
             return return_list
         except Exception as e:
             raise EkaUploadError(f"Upload failed: {str(e)}")
