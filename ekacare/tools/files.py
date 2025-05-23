@@ -94,7 +94,8 @@ class EkaFileUploader:
             if not txn_id:
                 txn_id = str(uuid.uuid4())
             upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
-           
+            print("Upload location data = ", upload_info, "action=", action)
+
             for file_path in file_paths: 
                 file_size = os.path.getsize(file_path)
                 if file_size > 100 * 1024 * 1024:  # 100MB threshold
