@@ -132,7 +132,7 @@ class EkaFileUploader:
                     resp = requests.post(
                         url=f"https://api.eka.care/voice/api/v2/transaction/init/{txn_id}",
                         headers=auth_headers,
-                        data=payload
+                        json=payload
                     )
                     print("Upload initialisation data = ", payload, "headers = ", auth_headers)
                     if resp.status_code != 200:
