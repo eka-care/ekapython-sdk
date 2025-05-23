@@ -136,6 +136,7 @@ class EkaFileUploader:
                         s3_file_paths.append(f"{s3_url}{file_name}")
                     
                     payload = {
+                            "s3_url": s3_url,
                             "batch_s3_url": s3_url,
                             "additional_data": extra_data,
                             "mode": extra_data.get('mode'),
