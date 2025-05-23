@@ -2,7 +2,7 @@ import requests
 import os
 import mimetypes
 import boto3
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 import uuid
 from io import BytesIO
 import json
@@ -19,6 +19,14 @@ class EkaFileUploader:
     """
     def __init__(self, client):
         self.client = client
+
+    def get_s3_bucket_name(self, url):
+        parsed = urlparse(url)
+        # Example: 'm-prod-ekascribe-batch.s3.amazonaws.com' → 'm-prod-ekascribe-batch'
+        domain_parts = parsed.netloc.split('.')
+        if 's3' in domain_parts:
+            return domain_parts[0]
+        return None
     
     def get_upload_location(self, txn_id=None, action='ekascribe', extra_data={}):
         """
@@ -116,8 +124,19 @@ class EkaFileUploader:
             if action == 'ekascribe-v2':
                 try:
                     self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
+                    bucket_name = self.get_s3_bucket_name(upload_info['uploadData']['url'])
+                    folder_path = upload_info['folderPath']
+                    
+                    s3_url = f"s3://{bucket_name}/{folder_path}"
+
+                    s3_file_paths = []
+
+                    for file in file_paths:
+                        file_name = os.path.basename(file)
+                        s3_file_paths.append(f"{s3_url}{file_name}")
+                    
                     payload = {
-                            "s3_url": upload_info['folderPath'],
+                            "s3_url": s3_url,
                             "additional_data": extra_data,
                             "mode": extra_data.get('mode'),
                             "input_language": output_format.get('input_language'),
@@ -125,7 +144,7 @@ class EkaFileUploader:
                             "Section": "section",
                             "output_format_template": output_format.get('output_template'),
                             "transfer": "non-vaded",
-                            "client_generated_files": file_paths
+                            "client_generated_files": s3_file_paths
                         }
                     auth_headers = {
                             "Authorization": f"Bearer {self.client.access_token}",
@@ -136,7 +155,7 @@ class EkaFileUploader:
                         json=payload
                     )
                     print("Upload initialisation data = ", payload, "headers = ", auth_headers)
-                    if resp.status_code != 200:
+                    if resp.status_code != 201:
                         raise EkaUploadError(f"Upload initialisation failed: {resp.json()}")
                 except Exception as e:
                     raise EkaUploadError(f"Upload failed: {str(e)}")
