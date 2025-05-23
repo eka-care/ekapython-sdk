@@ -52,7 +52,8 @@ class EkaFileUploader:
         data = {
             "client-id": self.client.client_id,
             "transaction-id": txn_id,
-            "audio-file": []
+            "audio-file": [],
+            "transfer": "non-vaded"
         }
         for item in audio_files:
             data['audio-file'].append(item.split('/')[-1])
@@ -75,7 +76,7 @@ class EkaFileUploader:
             'size': len(json_bytes.getvalue())
         }
 
-    def upload(self, file_paths, txn_id=None, action='default',extra_data={}, output_format = {}):
+    def upload(self, file_paths, txn_id=None, action='default',extra_data={}, output_format={}):
         """
         Upload a file to S3
         
@@ -110,6 +111,35 @@ class EkaFileUploader:
                 ))
             if action == 'ekascribe':
                 self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
+
+            if action == 'ekascribe-v2':
+                try:
+                    self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
+                    payload = {
+                            "s3_url": upload_info['folderPath'],
+                            "additional_data": extra_data,
+                            "mode": extra_data.get('mode'),
+                            "input_language": output_format.get('input_language'),
+                            "speciality": "speciality",
+                            "Section": "section",
+                            "output_format_template": output_format.get('output_template'),
+                            "transfer": "non-vaded",
+                            "client_generated_files": file_paths
+                        }
+                    auth_headers = {
+                            "Authorization": f"Bearer {self.client.access_token}",
+                        }
+                    resp = requests.post(
+                        url=f"https://api.eka.care/voice/api/v2/transaction/init/{txn_id}",
+                        headers=auth_headers,
+                        data=payload
+                    )
+                    print("Upload initialisation data = ", payload, "headers = ", auth_headers)
+                    if resp.status_code != 200:
+                        raise EkaUploadError(f"Upload initialisation failed: {resp.text}")
+                except Exception as e:
+                    raise EkaUploadError(f"Upload failed: {str(e)}")
+
             return return_list
         except Exception as e:
             raise EkaUploadError(f"Upload failed: {str(e)}")
