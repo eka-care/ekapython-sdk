@@ -16,7 +16,7 @@ class V2RX:
         """
         self.client = client
 
-    def get_session_status(self, session_id: str) -> Dict[str, Any]:
+    def get_session_status(self, session_id: str, action="ekascribe") -> Dict[str, Any]:
         """
         Fetch the status and results of a voice recording session (Ekascribe job).
 
@@ -50,6 +50,10 @@ class V2RX:
         """
         if not session_id:
             raise ValueError("Session ID cannot be null or empty")
-
+        
         endpoint = f"/voice-record/api/status/{session_id}"
+        
+        if action == "ekascribe-v2":
+            endpoint = f"voice/api/v3/status/{session_id}"
+
         return self.client.request(method="GET", endpoint=endpoint)

@@ -2,7 +2,7 @@ import requests
 import os
 import mimetypes
 import boto3
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 import uuid
 from io import BytesIO
 import json
@@ -19,6 +19,14 @@ class EkaFileUploader:
     """
     def __init__(self, client):
         self.client = client
+
+    def get_s3_bucket_name(self, url):
+        parsed = urlparse(url)
+        # Example: 'm-prod-ekascribe-batch.s3.amazonaws.com' → 'm-prod-ekascribe-batch'
+        domain_parts = parsed.netloc.split('.')
+        if 's3' in domain_parts:
+            return domain_parts[0]
+        return None
     
     def get_upload_location(self, txn_id=None, action='ekascribe', extra_data={}):
         """
@@ -45,17 +53,20 @@ class EkaFileUploader:
         except Exception as e:
             raise EkaUploadError(f"Error getting upload location: {str(e)}")
         
-    def push_ekascribe_json(self, audio_files, txn_id, extra_data={}, upload_info={}):
+    def push_ekascribe_json(self, audio_files, txn_id, extra_data={}, upload_info={}, output_format = {}):
         s3_post_data = upload_info['uploadData']
         folder_path = upload_info['folderPath']
         s3_post_data['fields']['key'] = folder_path + txn_id + '.json'
         data = {
             "client-id": self.client.client_id,
             "transaction-id": txn_id,
-            "audio-file": []
+            "audio-file": [],
+            "transfer": "non-vaded"
         }
         for item in audio_files:
             data['audio-file'].append(item.split('/')[-1])
+        data["additional_data"] = extra_data
+        data["output_format"] = output_format
         data.update(extra_data)
         json_bytes = BytesIO(json.dumps(data, indent=2).encode('utf-8'))
         files = {'file': ('data.json', json_bytes.getvalue(), 'application/json')}
@@ -73,7 +84,7 @@ class EkaFileUploader:
             'size': len(json_bytes.getvalue())
         }
 
-    def upload(self, file_paths, txn_id=None, action='default',extra_data={}):
+    def upload(self, file_paths, txn_id=None, action='default',extra_data={}, output_format={}):
         """
         Upload a file to S3
         
@@ -91,7 +102,7 @@ class EkaFileUploader:
             if not txn_id:
                 txn_id = str(uuid.uuid4())
             upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
-           
+
             for file_path in file_paths: 
                 file_size = os.path.getsize(file_path)
                 if file_size > 100 * 1024 * 1024:  # 100MB threshold
@@ -107,7 +118,47 @@ class EkaFileUploader:
                         file_path
                 ))
             if action == 'ekascribe':
-                self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info)
+                self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
+
+            if action == 'ekascribe-v2':
+                try:
+                    self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
+                    bucket_name = self.get_s3_bucket_name(upload_info['uploadData']['url'])
+                    folder_path = upload_info['folderPath']
+                    
+                    s3_url = f"s3://{bucket_name}/{folder_path}"
+
+                    s3_file_paths = []
+
+                    for file in file_paths:
+                        file_name = os.path.basename(file)
+                        s3_file_paths.append(f"{s3_url}{file_name}")
+                    
+                    payload = {
+                            "s3_url": s3_url,
+                            "batch_s3_url": s3_url,
+                            "additional_data": extra_data,
+                            "mode": extra_data.get('mode'),
+                            "input_language": output_format.get('input_language'),
+                            "speciality": "speciality",
+                            "Section": "section",
+                            "output_format_template": output_format.get('output_template'),
+                            "transfer": "non-vaded",
+                            "client_generated_files": s3_file_paths
+                        }
+                    auth_headers = {
+                            "Authorization": f"Bearer {self.client.access_token}",
+                        }
+                    resp = requests.post(
+                        url=f"https://api.eka.care/voice/api/v2/transaction/init/{txn_id}",
+                        headers=auth_headers,
+                        json=payload
+                    )
+                    if resp.status_code != 201:
+                        raise EkaUploadError(f"Upload initialisation failed: {resp.json()}")
+                except Exception as e:
+                    raise EkaUploadError(f"Upload failed: {str(e)}")
+
             return return_list
         except Exception as e:
             raise EkaUploadError(f"Upload failed: {str(e)}")
