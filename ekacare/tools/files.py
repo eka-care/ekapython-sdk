@@ -136,6 +136,9 @@ class EkaFileUploader:
                     )
                     print("Upload initialisation data = ", payload, "headers = ", auth_headers)
                     if resp.status_code != 200:
+                        import curlify
+                        curl = curlify.to_curl(resp.request)
+                        print("Curl command = ", curl)
                         raise EkaUploadError(f"Upload initialisation failed: {resp.text}")
                 except Exception as e:
                     raise EkaUploadError(f"Upload failed: {str(e)}")
