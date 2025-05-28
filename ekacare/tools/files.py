@@ -19,6 +19,7 @@ class EkaFileUploader:
     """
     def __init__(self, client):
         self.client = client
+        self.__upload_info = None
 
     def get_s3_bucket_name(self, url):
         parsed = urlparse(url)
@@ -103,6 +104,8 @@ class EkaFileUploader:
                 txn_id = str(uuid.uuid4())
             upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
 
+            self.__upload_info = upload_info
+
             for file_path in file_paths: 
                 file_size = os.path.getsize(file_path)
                 if file_size > 100 * 1024 * 1024:  # 100MB threshold
@@ -117,12 +120,14 @@ class EkaFileUploader:
                         upload_info['folderPath'],
                         file_path
                 ))
-            if action == 'ekascribe':
+            
+            
+            if action == 'ekascribe' or action =='ekascribe-v2':
                 self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
 
+            
             if action == 'ekascribe-v2':
                 try:
-                    self.push_ekascribe_json(file_paths, txn_id, extra_data = extra_data, upload_info= upload_info, output_format=output_format)
                     bucket_name = self.get_s3_bucket_name(upload_info['uploadData']['url'])
                     folder_path = upload_info['folderPath']
                     
@@ -245,3 +250,14 @@ class EkaFileUploader:
                 UploadId=upload_id
             )
             raise EkaUploadError(f"Multipart upload failed: {str(e)}")
+
+    def get_last_upload_info(self):
+        """
+        Get the upload info from the most recent upload operation.
+        
+        Returns:
+            dict: Upload info from the last successful upload, or None if no upload has been performed
+        """
+        if self.__upload_info is None:
+            return None
+        return self.__upload_info.copy()

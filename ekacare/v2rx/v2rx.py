@@ -1,4 +1,13 @@
 from typing import Dict, Any
+from io import BytesIO
+import requests
+import json
+import os
+from urllib.parse import urlencode, urlparse
+
+class EkaScribeError(Exception):
+    """Upload related errors for EkaScribe"""
+    pass
 
 class V2RX:
     """
@@ -15,6 +24,66 @@ class V2RX:
             client: The EkaCareClient instance.
         """
         self.client = client
+
+    def get_s3_bucket_name(self, url):
+        parsed = urlparse(url)
+        # Example: 'm-prod-ekascribe-batch.s3.amazonaws.com' → 'm-prod-ekascribe-batch'
+        domain_parts = parsed.netloc.split('.')
+        if 's3' in domain_parts:
+            return domain_parts[0]
+        return None
+
+
+    def upload(self, file_paths, txn_id=None, action='default', extra_data={}, output_format={}):
+        file_upload_result = self.client.files.upload(
+            file_paths=file_paths,
+            txn_id=txn_id,
+            action='default',
+            extra_data=extra_data,
+            output_format=output_format
+        )
+        upload_info = self.client.files.get_last_upload_info()
+
+        if action == 'ekascribe-v2':
+            try:
+                bucket_name = self.get_s3_bucket_name(upload_info['uploadData']['url'])
+                folder_path = upload_info['folderPath']
+                
+                s3_url = f"s3://{bucket_name}/{folder_path}"
+
+                s3_file_paths = []
+
+                for file in file_paths:
+                    file_name = os.path.basename(file)
+                    s3_file_paths.append(f"{s3_url}{file_name}")
+                
+                payload = {
+                        "s3_url": s3_url,
+                        "batch_s3_url": s3_url,
+                        "additional_data": extra_data,
+                        "mode": extra_data.get('mode'),
+                        "input_language": output_format.get('input_language'),
+                        "speciality": "speciality",
+                        "Section": "section",
+                        "output_format_template": output_format.get('output_template'),
+                        "transfer": "non-vaded",
+                        "client_generated_files": s3_file_paths
+                    }
+                auth_headers = {
+                        "Authorization": f"Bearer {self.client.access_token}",
+                    }
+                resp = requests.post(
+                    url=f"https://api.eka.care/voice/api/v2/transaction/init/{txn_id}",
+                    headers=auth_headers,
+                    json=payload
+                )
+                if resp.status_code != 201:
+                    raise EkaScribeError(f"Upload initialisation failed: {resp.json()}")
+
+            except Exception as e:
+                raise EkaScribeError(f"Upload failed: {str(e)}")
+        
+        return file_upload_result
 
     def get_session_status(self, session_id: str, action="ekascribe") -> Dict[str, Any]:
         """
