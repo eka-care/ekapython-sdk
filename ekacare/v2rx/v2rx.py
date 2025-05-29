@@ -38,7 +38,7 @@ class V2RX:
         file_upload_result = self.client.files.upload(
             file_paths=file_paths,
             txn_id=txn_id,
-            action='default',
+            action=action,
             extra_data=extra_data,
             output_format=output_format
         )
