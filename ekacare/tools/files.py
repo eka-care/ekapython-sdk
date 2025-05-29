@@ -103,7 +103,7 @@ class EkaFileUploader:
             if not txn_id:
                 txn_id = str(uuid.uuid4())
             upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
-
+            print(f"Upload info: {upload_info}")
             self.__upload_info = upload_info
 
             for file_path in file_paths: 
@@ -128,6 +128,8 @@ class EkaFileUploader:
 
             return return_list
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             raise EkaUploadError(f"Upload failed: {str(e)}")
 
     def _upload_single_file(self, upload_data, folder_path, file_path):
