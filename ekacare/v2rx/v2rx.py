@@ -35,6 +35,7 @@ class V2RX:
 
 
     def upload(self, file_paths, txn_id=None, action='default', extra_data={}, output_format={}):
+        print("Uploading files to Ekascribe...")
         file_upload_result = self.client.files.upload(
             file_paths=file_paths,
             txn_id=txn_id,
@@ -44,6 +45,7 @@ class V2RX:
         )
         upload_info = self.client.files.get_last_upload_info()
 
+        print("Uploading files to Ekascribe success...")
         if action == 'ekascribe-v2':
             try:
                 bucket_name = self.get_s3_bucket_name(upload_info['uploadData']['url'])
