@@ -103,7 +103,6 @@ class EkaFileUploader:
             if not txn_id:
                 txn_id = str(uuid.uuid4())
             upload_info = self.get_upload_location(txn_id, action=action, extra_data=extra_data)
-            print(f"Upload info: {upload_info}")
             self.__upload_info = upload_info
 
             for file_path in file_paths: 
@@ -119,7 +118,7 @@ class EkaFileUploader:
                         upload_info['uploadData'],
                         upload_info['folderPath'],
                         file_path
-                ))
+                    ))
             
             
             if action == 'ekascribe' or action =='ekascribe-v2':
@@ -131,7 +130,7 @@ class EkaFileUploader:
             import traceback
             traceback.print_exc()
             raise EkaUploadError(f"Upload failed: {str(e)}")
-
+        
     def _upload_single_file(self, upload_data, folder_path, file_path):
         """Internal method to handle single file upload"""
         file_name = os.path.basename(file_path)
@@ -140,80 +139,76 @@ class EkaFileUploader:
         s3_post_data = upload_data
         s3_post_data['fields']['key'] = folder_path + file_name
         
-        with open(file_path, 'rb') as file:
-            files = {
-                'file': (file_name, file, content_type)
-            }
-            
-            response = requests.post(
-                s3_post_data['url'],
-                data=s3_post_data['fields'],
-                files=files
-            )
-            
-            if response.status_code != 204:
-                raise EkaUploadError(f"Upload failed: {response.text}")
-            
-            return {
-                'key': folder_path + file_name,
-                'contentType': content_type,
-                'size': os.path.getsize(file_path)
-            }
+        try:
+            with open(file_path, 'rb') as file:
+                files = {
+                    'file': (file_name, file, content_type)
+                }
+                
+                # Optimized request configuration
+                response = requests.post(
+                    s3_post_data['url'],
+                    data=s3_post_data['fields'],
+                    files=files,
+                    timeout=(30, 1800),  # 30s connect, 30min read timeout
+                    stream=False,  # Let requests handle memory efficiently
+                )
+                
+                if response.status_code != 204:
+                    raise EkaUploadError(f"Upload failed for {file_name}: HTTP {response.status_code} - {response.text}")
+                
+                print(f"Successfully uploaded {file_name}")
+                
+                return {
+                    'key': folder_path + file_name,
+                    'contentType': content_type,
+                    'size': os.path.getsize(file_path)
+                }
+                
+        except requests.exceptions.Timeout:
+            raise EkaUploadError(f"Upload timeout for {file_name}. File may be too large or connection too slow.")
+        except requests.exceptions.ConnectionError:
+            raise EkaUploadError(f"Connection error while uploading {file_name}. Check network connectivity.")
+        except Exception as e:
+            raise EkaUploadError(f"Unexpected error uploading {file_name}: {str(e)}")
 
-    def _upload_large_file(self, upload_data, folder_path, file_path, part_size=10*1024*1024):
+    def _upload_large_file(self, upload_data, folder_path, file_path):
         """Internal method to handle large file upload using multipart"""
-        s3_client = boto3.client('s3')
         file_name = os.path.basename(file_path)
         content_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
+        file_size = os.path.getsize(file_path)
         
-        key = folder_path + file_name
-        
-        response = s3_client.create_multipart_upload(
-            Key=key,
-            ContentType=content_type
-        )
-        upload_id = response['UploadId']
+        s3_post_data = upload_data
+        s3_post_data['fields']['key'] = folder_path + file_name
         
         try:
-            file_size = os.path.getsize(file_path)
-            part_count = (file_size + part_size - 1) // part_size
-            parts = []
-            
-            with open(file_path, 'rb') as f:
-                for part_number in range(1, part_count + 1):
-                    f.seek((part_number - 1) * part_size)
-                    data = f.read(part_size)
-                    
-                    response = s3_client.upload_part(
-                        Key=key,
-                        PartNumber=part_number,
-                        UploadId=upload_id,
-                        Body=data
-                    )
-                    
-                    parts.append({
-                        'PartNumber': part_number,
-                        'ETag': response['ETag']
-                    })
-            
-            s3_client.complete_multipart_upload(
-                Key=key,
-                UploadId=upload_id,
-                MultipartUpload={'Parts': parts}
-            )
-            
-            return {
-                'key': key,
-                'contentType': content_type,
-                'size': file_size
-            }
-            
+            # Use a custom file wrapper for progress tracking
+            with ChunkedFileReader(file_path, chunk_size=8192) as chunked_file:
+                files = {
+                    'file': (file_name, chunked_file, content_type)
+                }
+                
+                response = requests.post(
+                    s3_post_data['url'],
+                    data=s3_post_data['fields'],
+                    files=files,
+                    timeout=(30, 1800)
+                )
+                
+                if response.status_code != 204:
+                    raise EkaUploadError(f"Upload failed for {file_name}: HTTP {response.status_code} - {response.text}")
+                
+                print(f"Successfully uploaded {file_name}")
+                
+                return {
+                    'key': folder_path + file_name,
+                    'contentType': content_type,
+                    'size': file_size
+                }
+                
         except Exception as e:
-            s3_client.abort_multipart_upload(
-                Key=key,
-                UploadId=upload_id
-            )
-            raise EkaUploadError(f"Multipart upload failed: {str(e)}")
+            raise EkaUploadError(f"Memory-efficient upload failed for {file_name}: {str(e)}")
+
 
     def get_last_upload_info(self):
         """
@@ -225,3 +220,50 @@ class EkaFileUploader:
         if self.__upload_info is None:
             return None
         return self.__upload_info.copy()
+    
+
+class ChunkedFileReader:
+    """
+    File-like object that reads in chunks for memory efficiency
+    """
+    def __init__(self, file_path, chunk_size=8192):
+        self.file_path = file_path
+        self.chunk_size = chunk_size
+        self.file = None
+        self.total_size = os.path.getsize(file_path)
+        self.bytes_read = 0
+        
+    def __enter__(self):
+        self.file = open(self.file_path, 'rb')
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file:
+            self.file.close()
+    
+    def read(self, size=-1):
+        if not self.file:
+            return b''
+        
+        if size == -1:
+            size = self.chunk_size
+        
+        chunk = self.file.read(min(size, self.chunk_size))
+        self.bytes_read += len(chunk)
+        
+        # Progress reporting (optional)
+        if self.bytes_read % (1024 * 1024) == 0:  # Every MB
+            progress = (self.bytes_read / self.total_size) * 100
+            print(f"Progress: {progress:.1f}% ({self.bytes_read / (1024*1024):.1f}MB/{self.total_size / (1024*1024):.1f}MB)")
+        
+        return chunk
+    
+    def seek(self, offset, whence=0):
+        if self.file:
+            return self.file.seek(offset, whence)
+    
+    def tell(self):
+        if self.file:
+            return self.file.tell()
+        return 0
+
