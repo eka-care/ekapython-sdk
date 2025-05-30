@@ -127,8 +127,6 @@ class EkaFileUploader:
 
             return return_list
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             raise EkaUploadError(f"Upload failed: {str(e)}")
         
     def _upload_single_file(self, upload_data, folder_path, file_path):
