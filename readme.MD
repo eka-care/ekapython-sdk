@@ -40,8 +40,6 @@ client = EkaCareClient(
 
 # Or initialize with an existing access token
 client = EkaCareClient(
-    client_id="your_client_id",
-    client_secret="your_client_secret",
     access_token="your_access_token"
 )
 
