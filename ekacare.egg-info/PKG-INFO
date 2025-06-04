@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ekacare
-Version: 0.0.8
+Version: 0.0.9
 Summary: Python SDK for Eka Care APIs
 Home-page: https://developer.eka.care
 Author: Eka Care SDK Developer
@@ -73,8 +73,6 @@ client = EkaCareClient(
 
 # Or initialize with an existing access token
 client = EkaCareClient(
-    client_id="your_client_id",
-    client_secret="your_client_secret",
     access_token="your_access_token"
 )
 
