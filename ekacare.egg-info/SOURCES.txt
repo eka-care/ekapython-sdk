@@ -30,5 +30,6 @@ ekacare/vitals/__init__.py
 ekacare/vitals/vitals.py
 ekacare/webhooks/__init__.py
 ekacare/webhooks/appointment.py
+ekacare/webhooks/enums.py
 tests/__init__.py
 tests/test_client.py
