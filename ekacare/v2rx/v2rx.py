@@ -70,7 +70,7 @@ class V2RX:
                         "output_format_template": output_format.get('output_template'),
                         "transfer": "non-vaded",
                         "client_generated_files": s3_file_paths,
-                        "model_type": output_format.get('model_type', 'pro'),
+                        "model_type": extra_data.get('model_type', 'pro'),
                     }
                 auth_headers = {
                         "Authorization": f"Bearer {self.client.access_token}",
