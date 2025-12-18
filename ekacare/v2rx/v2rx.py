@@ -73,7 +73,7 @@ class V2RX:
                         "model_type": extra_data.get('model_type', 'pro'),
                     }
                 
-                if extra_data.get('output_language'):
+                if extra_data.get('output_language') is not None:
                     payload['output_language'] = extra_data.get('output_language')
 
                 auth_headers = {
